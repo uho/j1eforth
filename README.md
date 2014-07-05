@@ -21,7 +21,7 @@ j1.exe [argument] , where [argument] is any forth file to be copiled by the simu
 
 enjoy ..
 
-Wrds to test in the simulatorsee , ' , compile , [compile] , ?branch , branch , call, .. and many more ]
+Words to test in the simulatorsee , ' , compile , [compile] , ?branch , branch , call, .. and many more ]
 
 Have fun , modify and pass on , ( I would like to see it running on the actual FPGA of J1 if possible
 
