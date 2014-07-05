@@ -23,7 +23,7 @@ enjoy ..
 
 Words to test in the simulator [ see , ' , compile , [compile] , ?branch , branch , call, .. and many more ]
 
-Have fun , modify and pass on , ( I would like to see it running on the actual FPGA of J1 if possible )
+Have fun , modify and pass on , ( I would like to see it running on the actual j1 FPGA if possible )
 
 
 
