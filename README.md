@@ -1,4 +1,4 @@
-j1eforth
+j1eForth
 ========
 
 eForth model for the j1 CPU simulator
