@@ -1,4 +1,4 @@
-eForth model for the j1 simulator
+eForth for the j1 simulator
 ========
 
 
