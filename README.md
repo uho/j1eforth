@@ -9,7 +9,7 @@ gcc j1.c -o j1.exe
 
 Compile j1eForth using an existing gforth installation or any ANS compatible FORTH to genearte the j1.bin
 
-gforth j1.fs
+gforth j1.4th
 
 Run the simulator
 
