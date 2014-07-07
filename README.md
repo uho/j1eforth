@@ -1,6 +1,81 @@
 eForth for the j1 simulator
 ========
 
+ Memory model
+ 
+ .--------------. 0
+ |     COLD     | 
+ '--------------' 40
+ |   CODE DICT  |    
+ '              '
+ |  ..........  | 
+ '              ' 
+ |   NAME DICT  | 
+ '--------------' 3ef0
+ |     USER     | 
+ '--------------' 3f00
+ |     TIB      | 
+ '--------------' 3fb8 
+
+ The Forth dictionary
+
+ Dictionary header
+
+ .------------,------------,--------------------------------------.
+ |            |            |                             ?cells   |
+ |    cell    |    cell    |     byte    |   ?bytes    ?alignment |
+ .------------.------------.-------------|-----------|------------.
+ |  code ptr  |    last    |  3 control  |   2^5 bytes max length |
+ |            |   nfa ptr  |   5 count                            |
+ '____________'____________'______________________________________'
+      cfa          lfa                     nfa
+
+
+ Dictionary linkage
+
+    1st                2nd                              nth
+ .--------.          .-------.                        .--------.
+ | null   |      .---| lfa   |       .................| lfa    |
+ '--------'--.   |   '-------'--.    |                '--------'--.
+ | nfa       |<--'   | nfa      |<---'                | nfa       |
+ '-----------'       '----------'                     '-----------'
+
+ Threading
+
+ Subroutine Threading
+
+ Example :
+
+ : SQUARE DUP * ;
+                           .--------------.
+                  .--------|     JMP      | CFA
+                  |        '--------------'
+                  .        |     LFA      |     (name dictionary)
+                  |        '---.----------'
+                  .        | 6 |  SQUARE  | NFA
+                  |        '---.----------'
+                  |     .----------.----------.
+     SQUARE'S PFA '---->| CALL DUP |  CALL *  | (code dictionary) -------- (exit square)
+                        '-----.----'----.-----'                      ^
+         .----------------.   |    ^     |   .----------------.      |
+  (exec) |    DUP'S PFA   |<--'    '     '-->|    *'S  PFA    | -----' (return to square's pfa)
+         '----------------'        |         '----------------'
+                |                  |               (exec)
+                |                  |
+                '------------------'
+              (return to square's pfa)
+
+ Runtime variable PFA
+        .--------.-----------------------.
+   PFA  |  NOOP  | CALL DOVAR | CONTENTS | (code dictionary) --- (exit variable)
+        '--------'------------'----------'
+            |
+            '---> This is a Behavioural pointer for (DOES>)
+
+ User variable PFA
+        .---------.
+   PFA  | ADDRESS | (code dictionary) ----- (exit variable)
+        '---------'
 
 
 Compile simulator on windows with MinGW
