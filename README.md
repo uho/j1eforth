@@ -15,7 +15,7 @@ eForth for the j1 Simulator
     3e78h '--------------' '-------'---> name dictionary, grows upwards
     3e80h .--------------. .-------.
           |     user     | |  80h  |<--- user area size
-    3f00h '--------------' '-------+
+    3f00h '--------------' '-------'
           |     tib      | | 100h  |<--- tib size
     4000h '--------------' '-------'
     
