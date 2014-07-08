@@ -1,4 +1,4 @@
-/ example dictionary extension words
+\ example dictionary extension words
 
 hex
 
