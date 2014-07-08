@@ -1,7 +1,7 @@
 \   eForth 1.0 for j1 Simulator by Edward A., July 2014 
 \   Much of the code is derived from the following sources:
-\       8086 eForth 1.0 by Bill Muench and C. H. Ting, 1990
-\       j1 Cross-compiler by James Bowman August 2010
+\      j1 Cross-compiler by James Bowman August 2010
+\     8086 eForth 1.0 by Bill Muench and C. H. Ting, 1990
 
 vocabulary meta.1
 vocabulary macro.1
@@ -19,7 +19,7 @@ create tflash 1000 cells here over erase allot
 
 variable tdp
 
-: there  tdp @ ;
+: there tdp @ ;
 : tc! tflash + c! ;
 : tc@ tflash + c@ ;
 : t! over ff and over tc! swap 8 rshift swap 1+ tc! ;
@@ -87,14 +87,11 @@ variable tdp
 4000 constant =em
 0000 constant =cold
 
-40 constant =us
-40 constant =rts
+40 2 * constant =us
 
-=em 8 -     constant =rp
-=rp =rts -  constant =tib
-=tib 8 -    constant =sp
-=em 100 -   constant =up
-=up 8 -     constant =name
+=em 100 - constant =tib
+=tib =us - constant =up
+=up 8 - constant =name
 =cold =us + constant =code
 
 variable tlast
@@ -125,7 +122,7 @@ variable tcp
 : code
   >in @ thead >in !
    in-target.1 create
-   talign tnp @ , does> @ t@ 1 rshift 4000 or talign t, ;
+   talign tnp @ , does> @ t@ talign call ;
 : $user
   >in @ thead >in !
    in-target.1 create
@@ -134,7 +131,7 @@ variable tcp
       0 tlast !
   =name tnp !
   =code tcode !
-4 =cell * =up + tuser !
+    =up tuser !
       0 tlen !
       0 tcp !
 
@@ -170,9 +167,30 @@ only forth also macro.1 also definitions also meta.1
 : _' ' ;
 : _@ w@ ;
 : >_body >body ;
-: patch >body _@ t! ;
 : ( [char] ) parse 2drop ;
+: _2/ 1 rshift ;
 : _s .s ;
+
+=cold org
+
+0 t,
+
+there constant =uzero 
+   =base t,
+   0 t,
+   0 t,
+   0 t,
+   =tib t,
+   0 t,
+   0 t,
+   0 t,
+   0 t,
+   0 t,
+   0 t,
+   0 t,
+   0 t,
+there constant =ulast 
+=ulast =uzero - constant =udiff
 
 =code org
 
@@ -195,7 +213,6 @@ code dup t t->n d+1 alu ret
 code drop n d-1 alu ret
 code over n t->n d+1 alu ret
 code nip t d-1 alu ret
-
 code lshift n<<t d-1 alu ret
 code rshift n>>t d-1 alu ret
 code 1- t-1 alu ret
@@ -215,22 +232,18 @@ code 2r@ rt t->n r-1 d+1 alu
 code unloop
     t r-1 alu
     t r-1 alu ret
-
 code dup@ [t] t->n d+1 alu ret
 code dup>r t t->r r+1 alu ret
 code 2dupxor t^n t->n d+1 alu ret
 code 2dup= n==t t->n d+1 alu ret
 code !nip t n->[t] d-1 alu ret
 code 2dup! t n->[t] alu ret
-
 code up1 t d+1 alu ret
 code down1 t d-1 alu ret
 code copy n alu ret
-
 code >r n t->r r+1 d-1 alu ret
 code r> rt t->n r-1 d+1 alu ret
 code r@ rt t->n d+1 alu ret
-
 code <> = invert ret
 code 0< 0 lit < ret
 code 0= 0 lit = ret
@@ -246,7 +259,6 @@ code sp@ dsp0 ff lit and ret
 code rp@ dsp0 8 lit rshift ret
 code rp! drop ret
 code sp! drop ret
-
 code execute ( ca -- ) >r ret
 code c@ ( b -- c )
   dup @ swap 1 lit and (if)
@@ -255,7 +267,6 @@ code c! ( c b -- )
   swap ff lit and dup 8 lit lshift or swap
    tuck dup @ swap 1 lit and 0 lit = ff lit xor
    >r over xor r> and xor swap ! ret
-
 code um+ ( w w -- w cy )
   over over + >r
    r@ 0 lit >= >r
@@ -266,15 +277,11 @@ code um+ ( w w -- w cy )
 code dovar ( -- a ) r> ret compile-only
 code up ( -- a ) dovar =up t, ret
 code douser ( -- a ) r> @ up @ + ret compile-only
-
-	  =base tuser _@ t!
 $user base
-
 $user tmp
 $user >in
 $user #tib
-	 =tib tuser @ t!
-	 =cell tuser +!
+   =cell tuser +!
 $user 'eval
 $user 'abort
 $user hld
@@ -283,7 +290,6 @@ $user context
 $user cp
 $user np
 $user last
-
 code ?dup ( w -- w w | 0 ) dup (if) dup (then) ret
 code rot ( w1 w2 w3 -- w2 w3 w1 ) >r swap r> swap ret
 code 2drop ( w w -- ) drop drop ret
@@ -344,7 +350,6 @@ code +! ( n a -- ) tuck @ + swap ! ret
 code 2! ( d a -- ) swap over ! cell+ ! ret
 code 2@ ( a -- d ) dup cell+ @ swap @ ret
 code count ( b -- b +n ) dup 1+ swap c@ ret
-
 code here ( -- a ) cp @ ret
 code pad ( -- a ) here 50 lit + ret
 code tib ( -- a ) #tib cell+ @ ret
@@ -352,6 +357,7 @@ code @execute ( a -- ) @ ?dup (if) execute (then) ret
 code cmove ( b1 b2 u -- ) (for) (aft) >r count r@ c! r> 1+ (then) (next) 2drop ret
 code fill ( b u c -- )
    swap (for) swap (aft) 2dup c! 1+ (then) (next) 2drop ret
+code erase 0 lit fill ret
 code -trailing ( b u -- b u )
    (for) (aft) dup r@ + c@ bl xor
     (if) r> 1+ exit (then) (then)
@@ -526,7 +532,7 @@ code quit ( -- )
 code abort preset .ok quit ret
 code ' ( -- ca ) token name? (if) exit (then) abort1 ret
 code allot ( n -- ) cp +! ret
-code , ( w -- ) here dup cell+ cp ! ! ret
+code , ( w -- ) here dup cell+ cp ! ! ret 
 code call, ( ca -- ) 1 lit rshift 4000 lit or , ret compile-only
 code ?branch ( ca -- ) 1 lit rshift 2000 lit or , ret compile-only
 code branch ( ca -- ) 1 lit rshift 0000 lit or , ret compile-only
@@ -583,7 +589,8 @@ code : ( -- ; <string> ) token $,n ] ret
 code immediate ( -- ) =imed lit last @ c@ or last @ c! ret
 code compile-only ( -- ) =comp lit last @ c@ or last @ c! ret
 code user ( u -- ; <string> ) token $,n overt compile douser , ret
-code create ( -- ; <string> ) token $,n overt compile dovar ret
+code create ( -- ; <string> ) token $,n overt compile noop compile dovar ret
+code dodoes last @ name> r> 1 lit rshift over cell+ ! dup cell+ cell+ 8000 lit or swap ! ret
 code variable ( -- ; <string> ) create 0 lit , ret
 code _type ( b u -- ) (for) (aft) count >char emit (then) (next) drop ret
 code dm+ ( a u -- a )
@@ -637,20 +644,20 @@ code hi ( -- )
 	type base ! cr ret
 code 'boot ( -- a ) dovar hi ret
 code cold ( -- )
+  =uzero lit =up lit =udiff lit cmove
+  preset
+  'boot execute
   overt
   4000 lit 8000 lit $eval
-  'boot execute
-  quit ret
+  quit 
+  _' cold >_body _@ t@ _2/ t, ret
 
-_' $interpret >_body _@ t@ _' 'eval   patch
-_' abort >_body _@ t@ _'      'abort patch
+_' $interpret >_body _@ t@ c t!
+_' abort >_body _@ t@ e t!
+_' cold >_body _@ t@ _2/ =cold t!
 
-tlast _@  _' last patch
-tnp   _@  _' np   patch
-there     _' cp   patch
-
-=cold org
-
-cold
+there     16 t!
+tnp   _@  18 t!
+tlast _@  1a t!
 
 save-target j1.bin
