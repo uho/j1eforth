@@ -97,11 +97,11 @@ eForth for the j1 Simulator
 
     j1.exe [optional argument]
     
-    The argument to the simulator is an optional forth file that can be used to extend the dictionary and is passed to the simulator as the first argument during startup
-
-Words to test in the simulator [ see , ' , compile , [compile] , ?branch , branch , call, .. and many more ]
-
-Have fun , modify and pass on , ( I would like to see it running on the actual j1 FPGA if possible )
+    The argument to the simulator is an optional forth file that can be used to extend the dictionary and is 
+    passed to the simulator as the first argument during startup
+    Words to test in the simulator [ see , ' , compile , [compile] , ?branch , branch , call, .. and many more ]
+    
+    Have fun , modify and pass on , ( I would like to see it running on the actual j1 FPGA if possible )
 
 
 
