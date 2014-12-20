@@ -396,13 +396,13 @@ code number? ( a -- n T | a F )
      (else) r> r> 2drop 2drop 0 lit
       (then) dup
    (then) r> 2drop r> base ! ret
-code ?key ( -- c T | F )
-   f001 lit @ -1 lit and 0> ret
+code ?key ( -- T | F )
+   f001 lit @ 1 lit and 0= invert ret  ( status/f001: { 0 0 0 0 0 0 TxBusy RXAv } )
 code key ( -- c )
    (begin)
      ?key
 	(until) f000 lit @ ret
-code emit ( c -- ) f000 lit ! ret
+code emit ( c -- ) (begin) f001 lit @ 2 lit and 0= (until) f000 lit ! ret
 code nuf? ( -- t ) ?key dup (if) 2drop key =cr lit = (then)  ret
 code space ( -- ) bl emit ret
 code spaces ( +n -- ) 0 lit max (for) (aft) space (then) (next) ret
