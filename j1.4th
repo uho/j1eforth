@@ -139,6 +139,16 @@ variable tcp
   bl word count w/o create-file throw >r
    tflash =em r@ write-file throw r> close-file bye ;
 
+: hex# ( u -- addr len )  0 <# base @ >r hex =lf hold # # # # r> base ! #> ;
+
+: save-hex ( <name> -- )
+  bl word count  w/o create-file throw
+  =em 0 
+  DO 
+     I t@  over >r hex# r> write-file throw
+  2 +LOOP
+  close-file throw ;
+
 only forth also macro.1 also definitions also meta.1
 
 : (begin) there ;
@@ -660,4 +670,5 @@ there     16 t!
 tnp   _@  18 t!
 tlast _@  1a t!
 
+save-hex j1.hex
 save-target j1.bin
