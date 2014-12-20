@@ -647,7 +647,7 @@ code words ( -- )
    @ ?dup
   (while)
    dup .id space cell-
-  (repeat) drop ret
+  (repeat) ret
 code ver ( -- n ) =ver lit 100 lit * =ext lit + ret
 code hi ( -- )
   cr ."| $lit eForth j1 v"
