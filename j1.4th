@@ -413,7 +413,7 @@ code key ( -- c )
      ?key
 	(until) f000 lit @ ret
 code emit ( c -- ) (begin) f001 lit @ 2 lit and 0= (until) f000 lit ! ret
-code nuf? ( -- t ) ?key dup (if) 2drop key =cr lit = (then)  ret
+code nuf? ( -- t ) ?key dup (if) drop key =cr lit = (then)  ret
 code space ( -- ) bl emit ret
 code spaces ( +n -- ) 0 lit max (for) (aft) space (then) (next) ret
 code type ( b u -- ) (for) (aft) count emit (then) (next) drop ret
