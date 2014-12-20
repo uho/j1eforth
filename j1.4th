@@ -355,7 +355,7 @@ code >char ( c -- c )
    7f lit and dup 7f lit bl within (if)
     drop 5f lit
    (then) ret
-code pick ( ... +n -- ... w ) 1+ cells sp@ + @ ret
+( code pick ( ... +n -- ... w ) ( 1+ cells sp@ + @ ret   \ no adressing into J1 stack ! )
 code +! ( n a -- ) tuck @ + swap ! ret
 code 2! ( d a -- ) swap over ! cell+ ! ret
 code 2@ ( a -- d ) dup cell+ @ swap @ ret
@@ -612,7 +612,9 @@ code dump ( a u -- )
    2 lit spaces _type
   (next) drop r> base ! ret
 code .s ( ... -- ... )
-  cr sp@ (for) (aft) r@ pick . (then) (next) ."| $lit <tos" ret
+  sp@ (begin) sp@ 1 lit - (while) swap >r (repeat)
+  (begin) dup (while) r> dup . swap 1 lit - (repeat) drop 
+  ."| $lit  <tos" ret
 code >name ( ca -- na | F )
   context
   (begin)
