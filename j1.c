@@ -1,6 +1,30 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#if defined(unix) || defined(__unix__) || defined(__unix) || (defined(__APPLE__) && defined(__MACH__))
+#include <unistd.h>
+#include <termios.h>
+int getch(void) { /* reads from keypress, doesn't echo */
+    struct termios oldattr, newattr;
+    int ch;
+    tcgetattr( STDIN_FILENO, &oldattr );
+    newattr = oldattr;
+    newattr.c_iflag &= ~( ICRNL );
+    newattr.c_lflag &= ~( ICANON | ECHO );
+    tcsetattr( STDIN_FILENO, TCSANOW, &newattr );
+    ch = getchar();
+    tcsetattr( STDIN_FILENO, TCSANOW, &oldattr );
+    // printf("%d\n", ch);
+    return ch==127 ? 8 : ch;
+}
+
+int putch(int c) { /* output character to sstdout & flush */
+    int res=putchar(c);
+    fflush(stdout);
+    return res;
+}
+#endif
+
 static unsigned short t;  
 static unsigned short s;
 static unsigned short d[0x20]; /* data stack */
@@ -92,18 +116,18 @@ static void execute(int entrypoint)
 /* start of i/o demo */
 
 
-void main(int argc , char *argv[]) 
+int main(int argc , char *argv[]) 
 {
   unsigned short m[0x8000];
   FILE *f = fopen("j1.bin", "r");
   fread(m, 0x2000, sizeof(m[0]), f);
   fclose(f);
-  if (argc>0) {
+  if (argc>1) {  // program name is counted as one
    f = fopen(argv[1], "r");
    fread(&m[0x2000], 0x2000, sizeof(m[0]), f);
    fclose(f);
   }
   memory = m;
   execute(0x00);
-  exit(0);
+  return 0;
 }
