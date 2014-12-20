@@ -73,7 +73,7 @@ variable tdp
    then ;
 
 0001 constant =ver
-0001 constant =ext
+0003 constant =ext
 0040 constant =comp
 0080 constant =imed
 7f1f constant =mask
@@ -648,7 +648,7 @@ code words ( -- )
   (while)
    dup .id space cell-
   (repeat) drop ret
-code ver ( -- n ) =ver lit ff lit * =ext lit + ret
+code ver ( -- n ) =ver lit 100 lit * =ext lit + ret
 code hi ( -- )
   cr ."| $lit eForth j1 v"
 	base @ hex
