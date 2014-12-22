@@ -73,7 +73,7 @@ variable tdp
    then ;
 
 0001 constant =ver
-0001 constant =ext
+0003 constant =ext
 0040 constant =comp
 0080 constant =imed
 7f1f constant =mask
@@ -138,6 +138,16 @@ variable tcp
 : save-target
   bl word count w/o create-file throw >r
    tflash =em r@ write-file throw r> close-file bye ;
+
+: hex# ( u -- addr len )  0 <# base @ >r hex =lf hold # # # # r> base ! #> ;
+
+: save-hex ( <name> -- )
+  bl word count  w/o create-file throw
+  =em 0 
+  DO 
+     I t@  over >r hex# r> write-file throw
+  2 +LOOP
+  close-file throw ;
 
 only forth also macro.1 also definitions also meta.1
 
@@ -345,7 +355,7 @@ code >char ( c -- c )
    7f lit and dup 7f lit bl within (if)
     drop 5f lit
    (then) ret
-code pick ( ... +n -- ... w ) 1+ cells sp@ + @ ret
+( code pick ( ... +n -- ... w ) ( 1+ cells sp@ + @ ret   \ no adressing into J1 stack ! )
 code +! ( n a -- ) tuck @ + swap ! ret
 code 2! ( d a -- ) swap over ! cell+ ! ret
 code 2@ ( a -- d ) dup cell+ @ swap @ ret
@@ -396,14 +406,14 @@ code number? ( a -- n T | a F )
      (else) r> r> 2drop 2drop 0 lit
       (then) dup
    (then) r> 2drop r> base ! ret
-code ?key ( -- c T | F )
-   f001 lit @ -1 lit and 0> ret
+code ?key ( -- T | F )
+   f001 lit @ 1 lit and 0= invert ret  ( status/f001: { 0 0 0 0 0 0 TxBusy RXAv } )
 code key ( -- c )
    (begin)
      ?key
 	(until) f000 lit @ ret
-code emit ( c -- ) f000 lit ! ret
-code nuf? ( -- t ) ?key dup (if) 2drop key =cr lit = (then)  ret
+code emit ( c -- ) (begin) f001 lit @ 2 lit and 0= (until) f000 lit ! ret
+code nuf? ( -- t ) ?key dup (if) drop key =cr lit = (then)  ret
 code space ( -- ) bl emit ret
 code spaces ( +n -- ) 0 lit max (for) (aft) space (then) (next) ret
 code type ( b u -- ) (for) (aft) count emit (then) (next) drop ret
@@ -602,7 +612,9 @@ code dump ( a u -- )
    2 lit spaces _type
   (next) drop r> base ! ret
 code .s ( ... -- ... )
-  cr sp@ (for) (aft) r@ pick . (then) (next) ."| $lit <tos" ret
+  sp@ (begin) sp@ 1 lit - (while) swap >r (repeat)
+  (begin) dup (while) r> dup . swap 1 lit - (repeat) drop 
+  ."| $lit  <tos" ret
 code >name ( ca -- na | F )
   context
   (begin)
@@ -635,8 +647,8 @@ code words ( -- )
    @ ?dup
   (while)
    dup .id space cell-
-  (repeat) drop ret
-code ver ( -- n ) =ver lit ff lit * =ext lit + ret
+  (repeat) ret
+code ver ( -- n ) =ver lit 100 lit * =ext lit + ret
 code hi ( -- )
   cr ."| $lit eForth j1 v"
 	base @ hex
@@ -660,4 +672,5 @@ there     16 t!
 tnp   _@  18 t!
 tlast _@  1a t!
 
+save-hex j1.hex
 save-target j1.bin
