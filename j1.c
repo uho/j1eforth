@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #if defined(unix) || defined(__unix__) || defined(__unix) || (defined(__APPLE__) && defined(__MACH__))
 #include <unistd.h>
@@ -54,6 +55,7 @@ static void execute(int entrypoint)
   int _pc, _t;
   int insn = 0x4000 | entrypoint; // first insn: "call entrypoint"
   do {
+    // printf("pc=%04X, insn=%04X, dsp=%d, s=%04X, t=%04X\n", pc, insn, dsp, s, t);
     _pc = pc + 1;
     if (insn & 0x8000) { // literal
       push(insn & 0x7fff);
@@ -119,6 +121,7 @@ static void execute(int entrypoint)
 int main(int argc , char *argv[]) 
 {
   unsigned short m[0x8000];
+  memset((void*)m, 0, sizeof(m));
   FILE *f = fopen("j1.bin", "r");
   fread(m, 0x2000, sizeof(m[0]), f);
   fclose(f);
