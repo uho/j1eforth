@@ -53,7 +53,7 @@ If you want to run J1 eForth on a J1 in an FPGA:
     
     [ see , ' , compile , [compile] , ?branch , branch , call, .. and many more ]
     
-    Have fun , modify and pass on , ( I would like to see it running on the actual j1 FPGA if possible )
+    Have fun , modify and pass on
 
 ### Running on Real Hardware
 
