@@ -1,7 +1,7 @@
 eForth for the J1 Simulator and actual J1 FPGAs
 -------------
 
-J1 eForth is a rudimentary interactive Forth to run on the [James Bowman's J1 FPGA soft core][j1] 
+J1 eForth is a work-in-progress interactive Forth to run on the [James Bowman's J1 FPGA soft core][j1] 
 (see also [J1 on Github][J1github]). There is a Forth cross compiler written in Forth to
 generate the interactice J1 eForth system, and a J1 simulator written in C to run J1 eForth simulated
 on a PC.
@@ -34,92 +34,6 @@ If you want to run J1 eForth on a J1 in an FPGA:
         ├── src     Verilog projects for J1 and UART (miniuart2) for Papilio Pro 
         └── test    testbenches
 
-## J1 eForth
-
-### Memory model
-
-
-       0h .--------------. .-------.
-          |     cold     | |  80h  |<--- cold boot and default values
-      80h '--------------' '-------'---> code dictionary, grows downwards
-          |   code dict  | |       |
-          '       |      ' |       |
-          |  .... + .... | | 3df8h | <--- max dictionary size
-          '       |      ' |       | 
-          |   name dict  | |       |
-    3e78h '--------------' '-------'---> name dictionary, grows upwards
-    3e80h .--------------. .-------.
-          |     user     | |  80h  |<--- user area size
-    3f00h '--------------' '-------'
-          |     tib      | | 100h  |<--- tib size
-    4000h '--------------' '-------'
-    
-
-
-### Forth dictionary
-
- 
-
-     Dictionary header:
-     
-    .------------,------------,--------------------------------------.
-    |            |            |                             ?cells   |
-    |    cell    |    cell    |     byte    |   ?bytes    ?alignment |
-    .------------.------------.-------------|-----------|------------.
-    |  code ptr  |    prev    |  3 control  |   2^5 bytes max length |
-    |            |   nfa ptr  |   5 count                            |
-    '____________'____________'______________________________________'
-          cfa          lfa                     nfa
-
-
- 
-#### Dictionary linkage
-
-        1st                 2nd                              nth
-     .--------.          .-------.                        .-------.
-     | null   |      .---| lfa   |       .................| lfa   |
-     '--------'--.   |   '-------'--.    |                '-------'--.
-     | nfa       |<--'   | nfa      |<---'                | nfa      |
-     '-----------'       '----------'                     '----------'
-   
-
-#### Threading
-
-    Subroutine Threading
-    
-    : SQUARE DUP * ;
-                           .--------------.
-                  .--------|     JMP      | CFA
-                  |        '--------------'
-                  .        |     LFA      |     (name dictionary)
-                  |        '---.----------'
-                  .        | 6 |  SQUARE  | NFA
-                  |        '---.----------'
-                  |     .----------.----------.
-     SQUARE'S PFA '---->| CALL DUP |  CALL *  | (code dictionary) -------- (exit) --
-                        '-----.----'----.-----'                      ^
-           .--------------.   |    ^     |   .----------------.      |
-    (exec) |   DUP'S PFA  |<--'    '     '-->|    *'S  PFA    | -----' (exit)
-           '--------------'        |         '----------------'
-                |                  |               (exec)
-                |                  |
-                '------------------'
-                      (exit)
-
-#### Runtime variable PFA
- 
- 
-         .--------.-----------------------.
-    PFA  |  NOOP  | CALL DOVAR | CONTENTS | (code dictionary) --- (exit)
-         '--------'------------'----------'
-            |
-            '---> This is a reserved cell for Behavioural pointer to (DOES>)
-
-#### User variable PFA
- 
-        .---------.
-    PFA | ADDRESS | (code dictionary) ----- (exit)
-        '---------'
 ### Building and running the j1 Simulator
 #### Compiling using gcc Mingw (Windows)
 
