@@ -1,7 +1,7 @@
 eForth for the J1 Simulator and actual J1 FPGAs
 -------------
 
-J1 eForth is a work-in-progress interactive Forth to run on the [James Bowman's J1 FPGA soft core][j1] 
+J1 eForth is an interactive work-in-progress Forth designed to run on the [James Bowman's J1 FPGA soft core][j1] 
 (see also [J1 on Github][J1github]). There is a Forth cross compiler written in Forth to
 generate the interactice J1 eForth system, and a J1 simulator written in C to run J1 eForth simulated
 on a PC.
