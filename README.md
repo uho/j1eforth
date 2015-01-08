@@ -77,7 +77,7 @@ including the Forth image (`j1.hex`) as initial memory (built before when genera
 
   or similar. J1 eForth should show the prompt
 	  
-	    eForth j1 v1.03
+	    eForth j1 v1.04
 	    ok
 	    
    If you only see the **`ok`** prompts issue a **`cold`** and press the enter key to reboot the system.
