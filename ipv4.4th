@@ -29,8 +29,6 @@ vocabulary ipv4.1
 
 only forth also ipv4.1 definitions
 
-: struct 0 ;
-
 variable active-struct
 
 : field
@@ -40,7 +38,7 @@ variable active-struct
 
 ( ethernet header )
 
-struct
+0
   6 field eth_dest      ( 48 bits source address )
   6 field eth_src       ( 48 bits destination address )
   2 field eth_type      ( 16 bit type )
@@ -55,7 +53,7 @@ constant eth_header%
 
 ( ip header )
 
-struct
+0
   1 field ip_ver_ihl    (  4 bits version field and 4 bits header length )
   1 field ip_tos        (  8 bits type of service )
   2 field ip_len        ( 16 bits length )
@@ -80,7 +78,7 @@ constant ip_header%
 
 ( udp header )
 
-struct
+0
   2 field udp_source    ( 16 bits source port )
   2 field udp_dest      ( 16 bits destination port )
   2 field udp_len       ( 16 bits length )
@@ -89,7 +87,7 @@ constant udp_header%
 
 ( tcp header )
 
-struct
+0
   2 field tcp_source    ( 16 bits source port )
   2 field tcp_dest      ( 16 bits destination port )
   4 field tcp_seq       ( 32 bits length )
@@ -104,7 +102,7 @@ constant tcp_header%
 
 ( arp packet )
 
-struct
+0
   2 field arp_hw        ( 16 bits set to 1 for ethernet )
   2 field arp_proto     ( 16 bits set to ip_type )
   1 field arp_hwlen     (  8 bits set to 6 for ethernet )
@@ -118,7 +116,7 @@ constant arp_packet%
 
 ( arp packet )
 
-struct
+0
   6 field ac_mac        ( 48 bits set to ip_type )  
   4 field ac_ip         ( 32 bits set to 1 for ethernet )
 constant arp_cache%
@@ -131,7 +129,7 @@ create arp_cache arp_cache% 8 * allot
 
 ( icmp packet )
 
-struct
+0
   1 field icmp_type     (  8 bits type )
   1 field icmp_code     (  8 bits code )
   2 field icmp_checksum ( 16 bits checksum )
