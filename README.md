@@ -46,8 +46,8 @@ If you want to run J1 eForth on a J1 in an FPGA:
 
     j1.exe [optional argument]
     
-    The argument to the simulator is an optional forth file that can be used to extend the dictionary
-    and is passed to the simulator as the first argument during startup
+    The argument to the simulator is an optional forth file that can be used to extend 
+    the dictionary and is passed to the simulator as the first argument during startup
     
     Words to test in the simulator : 
     
