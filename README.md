@@ -14,7 +14,7 @@ default speed of 115200 Bits/s.
 
    - [GNU make][gmake] (optional) for job control
    - [gforth][gforth] for cross compiling / generating the J1 eForth image
-   - [pcap][winpcap] for network simulation
+   - [WpdPack][pcap] for network simulation
 
 If you want to run J1 eForth simulated on a PC:
 
