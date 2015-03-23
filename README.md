@@ -38,7 +38,7 @@ If you want to run J1 eForth on a J1 in an FPGA:
 ### Building and running the j1 Simulator
 #### Compiling using gcc Mingw (Windows)
 
-    gcc j1.c -o j1.exe
+    gcc j1.c -o -lwpcap j1.exe
 
 #### Creating flash image j1.bin (and j1.hex)
 
