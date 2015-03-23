@@ -151,9 +151,6 @@ variable tuser
   947947 <> if
    abort" Unstructured" then true if
 	exit else [a] return then ;
-: t;fallthru
-  947947 <> if
-   abort" Unstructured" then ;
 : u:
   >in @ thead >in !
    get-current >r target.1 set-current create
@@ -161,10 +158,10 @@ variable tuser
 	 [a] literal exit =cell tuser +! does> @ [a] literal ;
 : [u]
   parse-word target.1 search-wordlist 0=
-    abort" [t]?" >body @ =up - =cell + ; immediate 
+    abort" [t]?" >body @ =up - =cell + ; immediate
 : immediate tlast @ tflash + dup c@ =imed or swap c! ;
 : compile-only tlast @ tflash + dup c@ =comp or swap c! ;
-	
+
       0 tlast !
     =up tuser !
 
@@ -176,7 +173,7 @@ variable tuser
 : save-target ( <name> -- )
   parse-word w/o create-file throw >r
    tflash there r@ write-file throw r> close-file ;
-   
+
 : begin  there ;
 : until  [a] ?branch ;
 
@@ -282,9 +279,22 @@ there constant =uzero
    0 t,     ( 'eval )
    0 t,     ( 'abort )
    0 t,     ( hld )
-   0 t, 0 t, 0 t, 0 t, 0 t, 0 t, 0 t, 0 t, 0 t, ( context )
-   0 t, 0 t, 0 t,                               ( forth-wordlist )
-   0 t, 0 t,                                    ( current )
+
+            ( context )
+
+   0 t, 0 t, 0 t, 0 t, 0 t, 0 t, 0 t, 0 t, 0 t,
+
+            ( forth-wordlist )
+
+   0 t,     ( na, of last definition, linked )
+   0 t,     ( wid|0, next or last wordlist in chain )
+   0 t,     ( na, wordlist name pointer )
+
+            ( current )
+
+   0 t,     ( wid, new definitions )
+   0 t,     ( wid, head of chain )
+
    0 t,     ( dp )
    0 t,     ( last )
    0 t,     ( '?key )
@@ -311,6 +321,7 @@ t: = = t;
 t: < < t;
 t: u< u< t;
 t: swap swap t;
+t: u> swap u< t;
 t: dup dup t;
 t: drop drop t;
 t: over over t;
@@ -354,7 +365,7 @@ t: um+ ( w w -- w cy )
   r> swap t;
 t: dovar ( -- a ) r> t; compile-only
 t: up dovar =up t, t;
-t: douser ( -- a ) r> @ up @ + t; compile-only
+t: douser ( -- a ) up @ r> @ + t; compile-only
 
 u: base
 u: temp
@@ -443,10 +454,10 @@ t: aligned ( b -- a )
    dup 0 literal =cell literal um/mod drop dup if
     =cell literal swap - then + t;
 t: align ( -- ) here aligned dp ! t;
-t: pad ( -- a ) here 50 literal + t;
+t: pad ( -- a ) here 50 literal + aligned t;
 t: @execute ( a -- ) @ ?dup if execute then exit t;
 t: fill ( b u c -- )
-   swap  for swap aft 2dup c! 1+ then next 2drop t;
+   swap for swap aft 2dup c! 1+ then next 2drop t;
 t: erase 0 literal fill t;
 t: digit ( u -- c ) 9 literal over < 7 literal and + 30 literal + t;
 t: extract ( n base -- n c ) 0 literal swap um/mod swap digit t;
@@ -494,7 +505,7 @@ t: key ( -- c )
 t: nuf? ( -- t ) ?key dup if drop key =cr literal = then exit t;
 t: space ( -- ) bl emit t;
 t: spaces ( +n -- ) 0 literal max  for aft space then next t;
-t: type ( b u -- )  for aft count emit then next drop t;
+t: type ( b u -- ) for aft count emit then next drop t;
 t: cr ( -- ) =cr literal emit =lf literal emit t;
 t: do$ ( -- a ) r> r@ r> count + aligned >r swap >r t; compile-only
 t: $"| ( -- a ) do$ noop t; compile-only
@@ -552,7 +563,7 @@ t: find ( a va -- ca na | a F )
    then
     while 2 literal cells -
     repeat r> drop nip cell- dup name> swap t;
-t: <name?> ( a -- ca na | a F )   
+t: <name?> ( a -- ca na | a F )
    context dup 2@ xor if cell- then >r
     begin
 	 r> cell+ dup >r @ ?dup
@@ -624,7 +635,14 @@ t: ?branch ( ca -- ) 1 literal rshift 2000 literal or , t; compile-only
 t: branch ( ca -- ) 1 literal rshift 0000 literal or , t; compile-only
 t: [compile] ( -- ; <string> ) ' call, t; immediate
 t: compile ( -- ) r> dup @ , cell+ >r t; compile-only
-t: literal ( w -- ) 8000 literal or , t; immediate
+t: recurse last @ name> call, t; immediate
+t: literal ( w -- ) 
+   dup 8000 literal and if
+    ffff literal xor [t] literal ]asm call asm[ compile invert
+   else
+    8000 literal or ,
+   then exit t; immediate
+t: ['] ' [t] literal ]asm call asm[ t; immediate
 t: $," ( -- ) 22 literal parse here pack$ count + aligned dp ! t;
 t: for ( -- a ) compile >r here t; compile-only immediate
 t: begin ( -- a ) here t; compile-only immediate
@@ -641,7 +659,6 @@ t: else ( A -- A ) [t] skip ]asm call asm[ swap [t] then ]asm call asm[ t; compi
 t: while ( a -- A a ) [t] if ]asm call asm[ swap t; compile-only immediate
 t: $" ( -- ; <string> ) compile $"| $," t; compile-only immediate
 t: ." ( -- ; <string> ) compile ."| $," t; compile-only immediate
-t: recurse last @ name> call, t; immediate
 t: >body ( ca -- pa ) 4 literal + t;
 t: to ( n -- ) ' >body ! t;
 t: +to ( n -- ) ' >body swap over @ + swap ! t;
@@ -677,7 +694,7 @@ t: exit r> drop t;
 t: <;> ( -- )
    compile [t] exit ]asm call asm[
    [ overt 0 literal here ! t; compile-only immediate
-t: ; ( -- ) '; @execute t; immediate
+t: ; ( -- ) '; @execute t; compile-only immediate
 t: ] ( -- ) [t] $compile literal 'eval ! t;
 t: : ( -- ; <string> ) token $,n ]  t;
 t: immediate ( -- ) =imed literal last @ @ or last @ ! t;
@@ -686,16 +703,17 @@ t: <create> ( -- ; <string> ) token $,n overt [t] dovar ]asm literal asm[ call, 
 t: create ( -- ; <string> ) 'create @execute t;
 t: variable ( -- ; <string> ) create 0 literal , t;
 t: (does>) ( -- )
-    r> 1 literal rshift here 1 literal rshift 
+   r> 1 literal rshift here 1 literal rshift
    last @ name> dup cell+ ]asm 8000 literal asm[ or , ! , t; compile-only
 t: compile-only ( -- ) =comp literal last @ @ or last @ ! t;
 t: does> ( -- ) compile (does>) noop t; immediate
 t: char ( <char> -- char ) ( -- c ) bl word 1+ c@ t;
+t: [char] char [t] literal ]asm call asm[ t; immediate
 t: constant create , (does>) @ t;
 t: .id ( na -- )
    ?dup if
    count 1f literal and type exit then
-    cr ."| $literal {noName}" t;
+   cr ."| $literal {noName}" t;
 t: wordlist ( -- wid ) align here 0 literal , dup current cell+ dup @ , ! 0 literal , t;
 t: order@ ( a -- u*wid u ) dup @ dup if >r cell+ order@ r> swap 1+ exit then nip t;
 t: get-order ( -- u*wid u ) context order@ t;
@@ -704,14 +722,14 @@ t: .wid ( wid -- )
    space dup >wid cell+ @ ?dup if .id drop exit then 0 literal u.r t;
 t: !wid ( wid -- ) >wid cell+ last @ swap ! t;
 t: vocs ( -- ) ( list all wordlists )
-  cr ."| $literal vocs:" current cell+ 
-  begin
-   @ ?dup 
-  while
-   dup .wid >wid 
-  repeat t;
+   cr ."| $literal vocs:" current cell+
+   begin
+    @ ?dup
+   while
+    dup .wid >wid
+   repeat t;
 t: order ( -- ) ( list search order )
-  cr ."| $literal search:" get-order
+   cr ."| $literal search:" get-order
    begin
     ?dup
    while
@@ -719,23 +737,23 @@ t: order ( -- ) ( list search order )
    repeat
    cr ."| $literal define:" get-current .wid t;
 t: set-order ( u*wid n -- ) ( 16.6.1.2197 )
-  dup -1 literal = if
+   dup -1 literal = if
    drop forth-wordlist 1 literal then
-  =vocs literal over u< <?abort"> $literal Over size of #vocs"
-  context swap
-  begin
-   dup
-  while
-   >r swap over ! cell+ r>
-   1-
-  repeat swap ! t;
+   =vocs literal over u< <?abort"> $literal Over size of #vocs"
+   context swap
+   begin
+    dup
+   while
+    >r swap over ! cell+ r>
+    1-
+   repeat swap ! t;
 t: only ( -- ) -1 literal set-order t;
 t: also ( -- ) get-order over swap 1+ set-order t;
 t: previous ( -- ) get-order swap drop 1- set-order t;
 t: >voc ( wid 'name' -- )
-  create dup , !wid
-  (does>)
-	@ >r get-order swap drop r> swap set-order t;
+   create dup , !wid
+   (does>)
+	 @ >r get-order swap drop r> swap set-order t;
 t: widof ( "vocabulary" -- wid ) ' >body @ t;
 t: vocabulary ( 'name' -- ) wordlist >voc t;
 t: _type ( b u -- )  for aft count >char emit then next drop t;
@@ -749,34 +767,60 @@ t: dump ( a u -- )
    next drop r> base ! t;
 t: pick dup 2 literal lshift 80 literal + execute t;
 t: .s ( ... -- ... ) cr sp@ 1- f literal and for r@ pick . next ."| $literal <tos" t;
-t: >name ( ca -- na | F )
-   current 
+t: (>name) ( ca va -- na | F )
    begin
-    cell+ @ ?dup
+    @ ?dup
    while
     2dup name> xor
      while cell-
    repeat nip exit
    then drop 0 literal t;
+t: >name ( ca -- na | F )
+   >r get-order
+   begin
+	  ?dup
+   while
+	  swap
+	  r@ swap
+	  (>name)
+	  ?dup if
+		>r
+		1- for aft drop then next
+		r> r> drop
+		exit
+	  then
+	  1-
+   repeat
+   r> drop 0 literal t;
 t: see ( -- ; <string> )
    ' cr
    begin
     dup @ ?dup 700c literal xor
    while
-    4000 literal xor 1 literal lshift
+    3fff literal and 1 literal lshift
 	>name ?dup if
      space .id
 	else
-	  dup @ u.
+	  dup @ 7fff literal and u.
 	then
 	cell+
    repeat 2drop t;
-t: words ( -- )
-   cr context @
+t: (words) ( -- )
+   cr
    begin
     @ ?dup
    while
     dup .id space cell-
+   repeat t;
+t: words
+   get-order
+   begin
+	  ?dup
+   while
+	  swap
+	  cr cr ."| $literal :" dup .wid cr
+	  (words)
+	  1-
    repeat t;
 t: ver ( -- n ) =ver literal 100 literal * =ext literal + t;
 t: hi ( -- )
@@ -787,7 +831,7 @@ t: hi ( -- )
 t: cold ( -- )
    =uzero literal =up literal =udiff literal cmove
    preset forth-wordlist dup context ! dup current 2! overt
-   4000 literal 8000 literal $eval
+   4000 literal cell+ dup cell- @ $eval
    'boot @execute
    quit
    cold t;
