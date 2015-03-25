@@ -143,13 +143,6 @@ variable arp_cache_count 0 arp_cache_count !
 : eth_rx f008 @ ;
 : eth_tx f008 ! ;
 
-: arp_update
-  eth_rx_buf active_struct !
-  eth_frame% active_struct +!
-  arp_sp arp_shw
-  arp_cache active_struct !
-  ac_hw 6 cmove
-  ac_ip 4 cmove ;
 : checksum ( addr count -- checksum)
   0 swap 
   2 /mod swap >r 1- for
@@ -159,56 +152,55 @@ variable arp_cache_count 0 arp_cache_count !
   dup 10 rshift swap ffff and +
   dup 10 rshift +
   ffff xor ;
-: ip_in ( -- )
-  eth_rx_buf active_struct !
-  eth_type @ eth_ip_type = if
-    eth_frame% active_struct +!
-	ip_proto c@ protocol_icmp = if
-	 ip_source ip_dest 4 cmove
-	 ip_addr ip_source 4 cmove
-	 0 ip_checksum !
-	 active_struct @ ip_header% checksum 
-	 ip_checksum !
-	 ip_len @ htons
-	 ip_header% active_struct +!
-	 icmp_echo_reply icmp_type c!
-	 0 icmp_checksum !
-	 ip_header% - active_struct @ swap checksum
-	 icmp_checksum !
-	 eth_tx
-    then
-  then ;
+: arp_update ;
 : arp_in ( -- )
-  eth_rx_buf active_struct !
-  eth_type @ eth_arp_type = if
-	eth_frame% active_struct +!
-	arp_op @ arp_request_type = if
-     100            arp_hw !
-     eth_ip_type    arp_proto !
-     6              arp_hlen c!
-     4              arp_plen c!
-     arp_reply_type arp_op !
-	 arp_shw        arp_thw 6 cmove
-     hw_addr        arp_shw 6 cmove
-	 arp_sp         arp_tp  4 cmove
-     ip_addr        arp_sp  4 cmove
-	 arp_thw
-	 eth_rx_buf active_struct !
-	 eth_dest 6 cmove
-     hw_addr eth_src 6 cmove
-     eth_arp_type eth_type !
-	 eth_tx
-	else
-	 arp_update
-	then
+  eth_frame% active_struct +!
+  arp_op @ arp_request_type = if
+   100            arp_hw !
+   eth_ip_type    arp_proto !
+   6              arp_hlen c!
+   4              arp_plen c!
+   arp_reply_type arp_op !
+   arp_shw        arp_thw 6 cmove
+   hw_addr        arp_shw 6 cmove
+   arp_sp         arp_tp  4 cmove
+   ip_addr        arp_sp  4 cmove
+   arp_thw
+   eth_rx_buf active_struct !
+   eth_dest 6 cmove
+   hw_addr eth_src 6 cmove
+   eth_arp_type eth_type !
+   eth_tx
+  else
+   arp_update
   then ;
-
-: pcap_poll eth_rx_buf 5dc erase eth_rx ;
-
+: icmp_in
+  ip_source dup ip_dest 4 cmove
+  ip_addr swap 4 cmove
+  ip_header% active_struct +!
+  icmp_echo_reply icmp_type c!
+  8 icmp_checksum +!
+  eth_tx ;
+: ip_in ( -- )
+  eth_frame% active_struct +!
+  ip_proto c@ protocol_icmp = if
+   icmp_in
+  then ;
+: process ( -- )
+  eth_type @ eth_arp_type = if
+    arp_in
+  else 
+   eth_type @ eth_ip_type = if
+    ip_in 
+   then
+  then ;
+: pcap_poll
+  eth_rx_buf active_struct !
+  active_struct @ 5dc erase
+  eth_rx ;
 : round 
 	pcap_poll if
-	 arp_in
-	 ip_in
+	  process
 	then ;
 : main
   begin
