@@ -70,7 +70,7 @@ constant arp_cache%
 ( ipv4 datagram header )
 
 0
-  1 field ip_ver_ihl    (  4 bit version and 4 bit header length )
+  1 field ip_vhl    (  4 bit version and 4 bit header length )
   1 field ip_tos        (  8 bit type of service )
   2 field ip_len        ( 16 bit length )
   2 field ip_id         ( 16 bit identification )
@@ -118,20 +118,16 @@ constant tcp_header%
 : htons ( n -- n )
   dup ff and 8 lshift swap ff00 and 8 rshift or ;
  
-create ip_addr c0a8 htons , 0bfe htons ,
-create ip_netmask ffff , ff00 htons ,
-create hw_addr 00bd htons , 3b33 htons , 057f htons ,
+create ip_addr a8c0 , fe0b ,
+create ip_netmask ffff , 00ff ,
+create hw_addr bd00 , 333b , 7f05 ,
 
- 800 htons constant eth_ip_type
- 806 htons constant eth_arp_type
-8035 htons constant eth_rarp_type
+   8 constant eth_ip_type
+ 608 constant eth_arp_type
+3580 constant eth_rarp_type
 
-1 htons constant arp_request_type
-2 htons constant arp_reply_type
-
- 1 constant protocol_icmp
- 6 constant protocol_tcp
-17 constant protocol_udp
+100 constant arp_request_type
+200 constant arp_reply_type
 
 0 constant icmp_echo_reply
 8 constant icmp_echo
@@ -175,31 +171,45 @@ variable arp_cache_count 0 arp_cache_count !
    arp_update
   then ;
 : icmp_in
-  ip_source dup ip_dest 4 cmove
-  ip_addr swap 4 cmove
   ip_header% active_struct +!
-  icmp_echo_reply icmp_type c!
-  8 icmp_checksum +!
-  eth_tx ;
+  icmp_type c@ 8 = if
+   0 icmp_type c!
+   icmp_checksum @ fff7 = if
+	9 icmp_checksum +!
+   else 8 icmp_checksum +! then
+  else
+   ( cr ." weird icmp packet" icmp_type c@ . )
+  then eth_tx ;
+: udp_in cr ." got udp packet." ;
+: tcp_in cr ." got tcp packet." ;
 : ip_in ( -- )
   eth_frame% active_struct +!
-  ip_proto c@ protocol_icmp = if
-   icmp_in
+  ip_vhl @ 45 = if
+   ip_proto c@ case
+     1 of
+	    ip_source dup ip_dest 4 cmove
+		ip_addr swap 4 cmove
+	    icmp_in 
+	   endof
+     6 of tcp_in endof
+    17 of udp_in endof
+	otherwise cr ." unknown ip protocol:" .
+   endcase
+  else
+   ." unsupported ip version detected."
   then ;
 : process ( -- )
-  eth_type @ eth_arp_type = if
-    arp_in
-  else 
-   eth_type @ eth_ip_type = if
-    ip_in 
-   then
-  then ;
+  eth_type @ case
+   eth_arp_type of arp_in endof
+   eth_ip_type of ip_in endof
+   otherwise cr ." unknown ethernet protocol:" . 
+  endcase ;   
 : pcap_poll
   eth_rx_buf active_struct !
   active_struct @ 5dc erase
   eth_rx ;
 : round 
-	pcap_poll if
+	pcap_poll 0 <> if
 	  process
 	then ;
 : main
@@ -208,7 +218,7 @@ variable arp_cache_count 0 arp_cache_count !
   again
 ;
 
-( main )
+main
 
 forth definitions
 ipv4.1 definitions
