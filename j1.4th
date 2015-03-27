@@ -297,6 +297,7 @@ there constant =uzero
 
    0 t,     ( dp )
    0 t,     ( last )
+   0 t,     ( cases )
    0 t,     ( '?key )
    0 t,     ( 'emit )
    0 t,     ( 'boot )
@@ -384,6 +385,7 @@ u: current
 	=cell tuser +!
 u: dp
 u: last
+u: cases
 u: '?key
 u: 'emit
 u: 'boot
@@ -657,6 +659,13 @@ t: skip here 0 literal branch t; compile-only immediate
 t: aft ( a -- a A ) drop [t] skip ]asm call asm[ [t] begin ]asm call asm[ swap t; compile-only immediate
 t: else ( A -- A ) [t] skip ]asm call asm[ swap [t] then ]asm call asm[ t; compile-only immediate
 t: while ( a -- A a ) [t] if ]asm call asm[ swap t; compile-only immediate
+t: case 0 literal cases ! t;
+t: of 1 literal cases +! compile over compile = [t] if ]asm call asm[
+   compile drop noop t; immediate
+t: endof [t] else ]asm call asm[ t; immediate
+t: otherwise compile dup noop t; immediate
+t: endcase compile drop cases @
+   1- for [t] then ]asm call asm[ next t; immediate
 t: $" ( -- ; <string> ) compile $"| $," t; compile-only immediate
 t: ." ( -- ; <string> ) compile ."| $," t; compile-only immediate
 t: >body ( ca -- pa ) 4 literal + t;
