@@ -18,6 +18,7 @@ int getch(void) { /* reads from keypress, doesn't echo */
     ch = getchar();
     tcsetattr( STDIN_FILENO, TCSANOW, &oldattr );
     // printf("%d\n", ch);
+	if(ch==0x1b) exit(0);
     return ch==127 ? 8 : ch;
 }
 int putch(int c) { /* output character to sstdout & flush */
@@ -47,7 +48,7 @@ static void pcapdev_init(void) {
     }
     device = devices->next->next;
     if (NULL == (handle= pcap_open_live(device->name
-			, 65536, 1, 1000 , errbuf))) {
+			, 65536, 1, 10 , errbuf))) {
         fprintf(stderr, "\nUnable to open the adapter. %s is not supported by WinPcap\n");
         pcap_freealldevs(devices);
         return;
@@ -139,7 +140,7 @@ static void execute(int entrypoint)
         case 9:   _t = s>>t; break; /* rshift */
         case 0xa:  _t = t-1; break; /* 1- */
         case 0xb:  _t = r[rsp];  break; /* r@ */
-        case 0xc:  _t = (t==0xf008)?eth_poll():(t==0xf001)?1:(t==0xf000)?getch():memory[t>>1];if(_t==0x1b)exit(0); break; /* @ */
+        case 0xc:  _t = (t==0xf008)?eth_poll():(t==0xf001)?1:(t==0xf000)?getch():memory[t>>1]; break; /* @ */
         case 0xd:  _t = s<<t; break; /* lshift */
         case 0xe:  _t = (rsp<<8) + dsp; break; /* dsp */
         case 0xf:  _t = -(s<t); break; /* u< */
