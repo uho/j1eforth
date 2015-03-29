@@ -149,7 +149,7 @@ variable tuser
   then ;
 : t;
   947947 <> if
-   abort" Unstructured" then true if
+   abort" unstructured" then true if
 	exit else [a] return then ;
 : u:
   >in @ thead >in !
@@ -297,7 +297,6 @@ there constant =uzero
 
    0 t,     ( dp )
    0 t,     ( last )
-   0 t,     ( cases )
    0 t,     ( '?key )
    0 t,     ( 'emit )
    0 t,     ( 'boot )
@@ -385,7 +384,6 @@ u: current
 	=cell tuser +!
 u: dp
 u: last
-u: cases
 u: '?key
 u: 'emit
 u: 'boot
@@ -479,7 +477,7 @@ t: digit? ( c base -- u t )
 	then
 	7 literal - dup a literal  < or
    then dup r> u< t;
-t: number? ( a -- n T | a F )
+t: number? ( a -- n t | a f )
    base @ >r 0 literal over count
    over c@ 24 literal = if
     hex swap 1+ swap 1- then
@@ -493,7 +491,7 @@ t: number? ( a -- n T | a F )
      else r> r> 2drop 2drop 0 literal
       then dup
    then r> 2drop r> base ! t;
-t: ?rx ( -- c T | F ) f001 literal @ 1 literal and 0= invert t;
+t: ?rx ( -- c t | f ) f001 literal @ 1 literal and 0= invert t;
 t: tx! ( c -- )
    begin
     f001 literal @ 2 literal and 0=
@@ -553,7 +551,7 @@ t: same? ( a a u -- a a f \ -0+ )
      over r@ + c@ - ?dup
    if r> drop exit then then
     next 0 literal t;
-t: find ( a va -- ca na | a F )
+t: find ( a va -- ca na | a f )
    swap
    dup c@ temp !
    dup @ >r
@@ -565,14 +563,14 @@ t: find ( a va -- ca na | a F )
    then
     while 2 literal cells -
     repeat r> drop nip cell- dup name> swap t;
-t: <name?> ( a -- ca na | a F )
+t: <name?> ( a -- ca na | a f )
    context dup 2@ xor if cell- then >r
     begin
 	 r> cell+ dup >r @ ?dup
     while
 	 find ?dup
     until r> drop exit then r> drop 0 literal t;
-t: name? ( a -- ca na | a F ) 'name? @execute t;
+t: name? ( a -- ca na | a f ) 'name? @execute t;
 t: ^h ( bot eot cur -- bot eot cur )
    >r over r@ < dup if
     =bksp literal dup emit space
@@ -646,36 +644,61 @@ t: literal ( w -- )
    then exit t; immediate
 t: ['] ' [t] literal ]asm call asm[ t; immediate
 t: $," ( -- ) 22 literal parse here pack$ count + aligned dp ! t;
-t: for ( -- a ) compile >r here t; compile-only immediate
+t: for ( -- a ) compile [t] >r ]asm call asm[ here t; compile-only immediate
 t: begin ( -- a ) here t; compile-only immediate
-t: donxt ( -- ) r> r> dup if 1- >r @ >r exit then drop cell+ >r t; compile-only
-t: next ( -- ) compile donxt , t; compile-only immediate
+t: (next) ( n -- ) r> r> ?dup if 1- >r @ >r exit then cell+ >r t; compile-only
+t: next ( -- ) compile (next) , t; compile-only immediate
+t: (do) ( limit index -- index ) over 1- r> swap >r >r - 1- t; compile-only
+t: do ( limit index -- ) compile (do) [t] for ]asm call asm[ t; compile-only immediate
+t: (loop) r> r> drop >r t; compile-only
+t: loop ( -- ) [t] next ]asm call asm[ compile (loop) noop t; compile-only immediate
+t: (+loop)
+    ?dup 0< if negate then 
+	r> swap r> + dup 0< if
+	 >r @ >r exit 
+	then 
+	drop cell+ >r
+	(loop)
+   t; compile-only
+t: +loop ( n -- ) compile (+loop) , t; compile-only immediate
+t: (i) ( -- index ) r> r> r> 2dup >r >r swap - swap >r t; compile-only
+t: i ( -- index ) compile (i) noop t; compile-only immediate
 t: until ( a -- ) ?branch t; compile-only immediate
 t: again ( a -- ) branch t; compile-only immediate
-t: if ( -- A ) here 0 literal ?branch t; compile-only immediate
-t: then ( A -- ) here 1 literal rshift over @ or swap ! t; compile-only immediate
-t: repeat ( A a -- ) branch [t] then ]asm call asm[ t; compile-only immediate
+t: if ( -- a ) here 0 literal ?branch t; compile-only immediate
+t: then ( a -- ) here 1 literal rshift over @ or swap ! t; compile-only immediate
+t: repeat ( a a -- ) branch [t] then ]asm call asm[ t; compile-only immediate
 t: skip here 0 literal branch t; compile-only immediate
-t: aft ( a -- a A ) drop [t] skip ]asm call asm[ [t] begin ]asm call asm[ swap t; compile-only immediate
-t: else ( A -- A ) [t] skip ]asm call asm[ swap [t] then ]asm call asm[ t; compile-only immediate
-t: while ( a -- A a ) [t] if ]asm call asm[ swap t; compile-only immediate
-t: case 0 literal cases ! t;
-t: of 1 literal cases +! compile over compile = [t] if ]asm call asm[
-   compile drop noop t; immediate
-t: endof [t] else ]asm call asm[ t; immediate
-t: otherwise compile dup noop t; immediate
-t: endcase compile drop cases @
-   1- for [t] then ]asm call asm[ next t; immediate
+t: aft ( a -- a a ) drop [t] skip ]asm call asm[ [t] begin ]asm call asm[ swap t; compile-only immediate
+t: else ( a -- a ) [t] skip ]asm call asm[ swap [t] then ]asm call asm[ t; compile-only immediate
+t: while ( a -- a a ) [t] if ]asm call asm[ swap t; compile-only immediate
+t: (case) r> swap >r >r	t; compile-only
+t: case compile (case) 30 literal t; compile-only immediate
+t: (of) r> r@ swap >r = t; compile-only
+t: of compile (of) [t] if ]asm call asm[ t; compile-only immediate
+t: endof [t] else ]asm call asm[ 31 literal t; compile-only immediate
+t: (endcase) r> r> drop >r t;
+t: endcase
+   begin
+    dup 31 literal =
+   while
+    drop			
+    [t] then ]asm call asm[
+   repeat
+   30 literal <> <?abort"> $literal bad case construct."
+   compile (endcase) noop t; compile-only immediate
 t: $" ( -- ; <string> ) compile $"| $," t; compile-only immediate
 t: ." ( -- ; <string> ) compile ."| $," t; compile-only immediate
-t: >body ( ca -- pa ) 4 literal + t;
-t: to ( n -- ) ' >body ! t;
-t: +to ( n -- ) ' >body swap over @ + swap ! t;
+t: >body ( ca -- pa ) cell+ t;
+t: (to) ( n -- ) r> dup cell+ >r @ ! t; compile-only
+t: to ( n -- ) compile (to) ' >body , t; compile-only immediate
+t: (+to) ( n -- ) r> dup cell+ >r @ +! t; compile-only
+t: +to ( n -- ) compile (+to) ' >body , t; compile-only immediate
 t: get-current ( -- wid ) current @ t;
 t: set-current ( wid -- ) current ! t;
 t: definitions ( -- ) context @ set-current t;
 t: ?unique ( a -- a )
-   dup get-current find if ."| $literal  reDef " over .$ then drop t;
+   dup get-current find if ."| $literal  redef " over .$ then drop t;
 t: <$,n> ( na -- )
    dup c@ if
     ?unique
@@ -719,10 +742,15 @@ t: does> ( -- ) compile (does>) noop t; immediate
 t: char ( <char> -- char ) ( -- c ) bl word 1+ c@ t;
 t: [char] char [t] literal ]asm call asm[ t; immediate
 t: constant create , (does>) @ t;
+t: defer create 0 literal , 
+   (does>) 
+    @ ?dup 0 literal =
+   <?abort"> $literal uninitialized" execute t;
+t: is ' >body ! t; immediate
 t: .id ( na -- )
    ?dup if
    count 1f literal and type exit then
-   cr ."| $literal {noName}" t;
+   cr ."| $literal {noname}" t;
 t: wordlist ( -- wid ) align here 0 literal , dup current cell+ dup @ , ! 0 literal , t;
 t: order@ ( a -- u*wid u ) dup @ dup if >r cell+ order@ r> swap 1+ exit then nip t;
 t: get-order ( -- u*wid u ) context order@ t;
@@ -748,7 +776,7 @@ t: order ( -- ) ( list search order )
 t: set-order ( u*wid n -- ) ( 16.6.1.2197 )
    dup -1 literal = if
    drop forth-wordlist 1 literal then
-   =vocs literal over u< <?abort"> $literal Over size of #vocs"
+   =vocs literal over u< <?abort"> $literal over size of #vocs"
    context swap
    begin
     dup
@@ -776,7 +804,7 @@ t: dump ( a u -- )
    next drop r> base ! t;
 t: pick dup 2 literal lshift 80 literal + execute t;
 t: .s ( ... -- ... ) cr sp@ 1- f literal and for r@ pick . next ."| $literal <tos" t;
-t: (>name) ( ca va -- na | F )
+t: (>name) ( ca va -- na | f )
    begin
     @ ?dup
    while
@@ -784,7 +812,7 @@ t: (>name) ( ca va -- na | F )
      while cell-
    repeat nip exit
    then drop 0 literal t;
-t: >name ( ca -- na | F )
+t: >name ( ca -- na | f )
    >r get-order
    begin
 	  ?dup
@@ -833,7 +861,7 @@ t: words
    repeat t;
 t: ver ( -- n ) =ver literal 100 literal * =ext literal + t;
 t: hi ( -- )
-   cr ."| $literal eForth j1 v"
+   cr ."| $literal eforth j1 v"
 	base @ hex
 	ver <# # # 2e literal hold # #>
 	type base ! cr t;
