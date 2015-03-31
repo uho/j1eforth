@@ -245,7 +245,5 @@ arp_cache% 8 * arp_table arp_cache
 
 ( main )
 
-: polo 4022 404a do i @ . -2 +loop ;
-
 forth definitions
 ipv4.1 definitions
