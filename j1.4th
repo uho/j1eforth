@@ -247,23 +247,25 @@ a: up e for up1 next noop exit ;
 =pick org
 
     ]asm down up asm[
+	
+there constant =pickbody
 
 	copy ]asm return asm[
-	5c ]asm call asm[ 7c ]asm branch asm[
-	5a ]asm call asm[ 7a ]asm branch asm[
-	58 ]asm call asm[ 78 ]asm branch asm[
-	56 ]asm call asm[ 76 ]asm branch asm[
-	54 ]asm call asm[ 74 ]asm branch asm[
-	52 ]asm call asm[ 72 ]asm branch asm[
-	50 ]asm call asm[ 70 ]asm branch asm[
-	4e ]asm call asm[ 6e ]asm branch asm[
-	4c ]asm call asm[ 6c ]asm branch asm[
-	4a ]asm call asm[ 6a ]asm branch asm[
-	48 ]asm call asm[ 68 ]asm branch asm[
-	46 ]asm call asm[ 66 ]asm branch asm[
-	44 ]asm call asm[ 64 ]asm branch asm[
-	42 ]asm call asm[ 62 ]asm branch asm[
-	40 ]asm call asm[ 60 ]asm branch asm[
+	9c ]asm call asm[ bc ]asm branch asm[
+	9a ]asm call asm[ ba ]asm branch asm[
+	98 ]asm call asm[ b8 ]asm branch asm[
+	96 ]asm call asm[ b6 ]asm branch asm[
+	94 ]asm call asm[ b4 ]asm branch asm[
+	92 ]asm call asm[ b2 ]asm branch asm[
+	90 ]asm call asm[ b0 ]asm branch asm[
+	8e ]asm call asm[ ae ]asm branch asm[
+	8c ]asm call asm[ ac ]asm branch asm[
+	8a ]asm call asm[ aa ]asm branch asm[
+	88 ]asm call asm[ a8 ]asm branch asm[
+	86 ]asm call asm[ a6 ]asm branch asm[
+	84 ]asm call asm[ a4 ]asm branch asm[
+	82 ]asm call asm[ a2 ]asm branch asm[
+	80 ]asm call asm[ a0 ]asm branch asm[
 	]asm return asm[
 
 =cold org
@@ -636,7 +638,8 @@ t: branch ( ca -- ) 1 literal rshift 0000 literal or , t; compile-only
 t: [compile] ( -- ; <string> ) ' call, t; immediate
 t: compile ( -- ) r> dup @ , cell+ >r t; compile-only
 t: recurse last @ name> call, t; immediate
-t: literal ( w -- ) 
+t: pick dup 2* 2* =pickbody literal + >r t;
+t: literal ( w -- )
    dup 8000 literal and if
     ffff literal xor [t] literal ]asm call asm[ compile invert
    else
@@ -648,20 +651,30 @@ t: for ( -- a ) compile [t] >r ]asm call asm[ here t; compile-only immediate
 t: begin ( -- a ) here t; compile-only immediate
 t: (next) ( n -- ) r> r> ?dup if 1- >r @ >r exit then cell+ >r t; compile-only
 t: next ( -- ) compile (next) , t; compile-only immediate
-t: (do) ( limit index -- index ) over 1- r> swap >r >r - 1- t; compile-only
-t: do ( limit index -- ) compile (do) [t] for ]asm call asm[ t; compile-only immediate
-t: (loop) r> r> drop >r t; compile-only
-t: loop ( -- ) [t] next ]asm call asm[ compile (loop) noop t; compile-only immediate
+t: (do) ( limit index -- index ) r> dup >r swap rot >r >r cell+ >r t; compile-only
+t: do ( limit index -- ) compile (do) 0 literal , here t; compile-only immediate
+t: (leave) r> drop r> drop r> drop t; compile-only
+t: leave compile (leave) noop t; compile-only immediate
+t: (loop)
+   r> r> 1+ r> 2dup <> if
+    >r >r @ >r exit
+   then >r 1- >r cell+ >r t; compile-only
+t: (unloop) r> r> drop r> drop r> drop >r t; compile-only
+t: unloop compile (unloop) noop t; compile-only immediate
+t: (?do)
+   2dup <> if
+     r> dup >r swap rot >r >r cell+ >r exit
+   then 2drop exit t; compile-only
+t: ?do ( limit index -- ) compile (?do) 0 literal , here t; compile-only immediate
+t: loop ( -- ) compile (loop) dup , compile (unloop) cell- here 1 literal rshift swap ! t; compile-only immediate
 t: (+loop)
-    ?dup 0< if negate then 
-	r> swap r> + dup 0< if
-	 >r @ >r exit 
-	then 
-	drop cell+ >r
-	(loop)
-   t; compile-only
-t: +loop ( n -- ) compile (+loop) , t; compile-only immediate
-t: (i) ( -- index ) r> r> r> 2dup >r >r swap - swap >r t; compile-only
+   r> swap r> r> 2dup - >r
+   2 literal pick r@ + r@ xor 0< 0=
+   3 literal pick r> xor 0< 0= or if
+    >r + >r @ >r exit
+   then >r >r drop cell+ >r t; compile-only
+t: +loop ( n -- ) compile (+loop) dup , compile (unloop) cell- here 1 literal rshift swap ! t; compile-only immediate
+t: (i) ( -- index ) r> r> tuck >r >r t; compile-only
 t: i ( -- index ) compile (i) noop t; compile-only immediate
 t: until ( a -- ) ?branch t; compile-only immediate
 t: again ( a -- ) branch t; compile-only immediate
@@ -802,7 +815,6 @@ t: dump ( a u -- )
    for cr 10 literal 2dup dm+ -rot
    2 literal spaces _type
    next drop r> base ! t;
-t: pick dup 2 literal lshift 80 literal + execute t;
 t: .s ( ... -- ... ) cr sp@ 1- f literal and for r@ pick . next ."| $literal <tos" t;
 t: (>name) ( ca va -- na | f )
    begin
